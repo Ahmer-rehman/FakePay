@@ -1,12 +1,13 @@
 import express from 'express';
-import { Low, JSONFile } from 'lowdb';
+import low from 'lowdb';
+import FileSync from 'lowdb/adapters/FileSync.js'; // Correct import path
 import { nanoid } from 'nanoid';
 import cors from 'cors';
 import twilio from 'twilio';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config();  // Load environment variables
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,6 +16,16 @@ const port = process.env.PORT || 3000;
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const verifySid = process.env.TWILIO_VERIFY_SID;
+
+// Log the credentials to verify they are loaded correctly
+console.log('Twilio Account SID:', accountSid);
+console.log('Twilio Auth Token:', authToken);
+console.log('Twilio Verify SID:', verifySid);
+
+if (!accountSid || !authToken || !verifySid) {
+  throw new Error('Twilio credentials are required');
+}
+
 const client = twilio(accountSid, authToken);
 
 // Middleware to parse JSON bodies and enable CORS
@@ -22,17 +33,16 @@ app.use(express.json());
 app.use(cors());
 
 // Set up the database
-const adapter = new JSONFile('db.json');
-const db = new Low(adapter);
+const adapter = new FileSync('./db.json');
+const db = low(adapter);
 
-db.data = db.data || { users: [], transactions: [], otps: [] };
+db.defaults({ users: [], transactions: [], otps: [] }).write();
 
 // Sample data initialization
 const initializeData = async () => {
-  if (db.data.users.length === 0) {
-    db.data.users.push({ id: nanoid(), name: 'Ahmer', mobile: '+923001234567', balance: 20000.00, pin: '1234' });
-    db.data.users.push({ id: nanoid(), name: 'John Doe', mobile: '+923350408438', balance: 15000.00, pin: '4321' });
-    await db.write();
+  if (db.get('users').size().value() === 0) {
+    db.get('users').push({ id: nanoid(), name: 'Ahmer', mobile: '+923350408438', balance: 20000.00, pin: '1234' }).write();
+    db.get('users').push({ id: nanoid(), name: 'John Doe', mobile: '+923350408438', balance: 15000.00, pin: '4321' }).write();
   }
 };
 initializeData();
@@ -40,7 +50,7 @@ initializeData();
 // Middleware to authenticate user by mobile and pin
 const authenticateUser = (req, res, next) => {
   const { mobile, pin } = req.body;
-  const user = db.data.users.find(u => u.mobile === mobile && u.pin === pin);
+  const user = db.get('users').find({ mobile, pin }).value();
   if (!user) {
     return res.status(401).json({ message: 'Authentication failed' });
   }
@@ -65,7 +75,7 @@ const decrypt = (text) => {
   let encryptedText = Buffer.from(text.encryptedData, 'hex');
   let decipher = crypto.createDecipheriv(algorithm, Buffer.from(key), iv);
   let decrypted = decipher.update(encryptedText);
-  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  decrypted = Buffer.concat([decrypted, cipher.final()]);
   return decrypted.toString();
 };
 
@@ -95,13 +105,12 @@ app.post('/api/generate-otp', authenticateUser, async (req, res) => {
 // Register a new user
 app.post('/api/register', async (req, res) => {
   const { name, mobile, pin } = req.body;
-  const existingUser = db.data.users.find(user => user.mobile === mobile);
+  const existingUser = db.get('users').find({ mobile }).value();
   if (existingUser) {
     return res.status(400).json({ message: 'User already exists with this mobile number' });
   }
   const newUser = { id: nanoid(), name, mobile, balance: 0, pin };
-  db.data.users.push(newUser);
-  await db.write();
+  db.get('users').push(newUser).write();
   res.status(201).json(newUser);
 });
 
@@ -119,7 +128,7 @@ app.post('/api/transfer', authenticateUser, async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
-    const receiver = db.data.users.find(u => u.mobile === receiverMobile);
+    const receiver = db.get('users').find({ mobile: receiverMobile }).value();
 
     if (!receiver) {
       return res.status(404).json({ message: 'Receiver not found' });
@@ -141,8 +150,7 @@ app.post('/api/transfer', authenticateUser, async (req, res) => {
     };
 
     const encryptedTransaction = encrypt(JSON.stringify(transaction));
-    db.data.transactions.push(encryptedTransaction);
-    await db.write();
+    db.get('transactions').push(encryptedTransaction).write();
 
     res.status(200).json({ message: 'Transfer successful', transaction: encryptedTransaction });
   } catch (error) {
@@ -166,8 +174,7 @@ app.post('/api/deposit', authenticateUser, async (req, res) => {
   };
 
   const encryptedTransaction = encrypt(JSON.stringify(transaction));
-  db.data.transactions.push(encryptedTransaction);
-  await db.write();
+  db.get('transactions').push(encryptedTransaction).write();
 
   res.status(200).json({ message: 'Deposit successful', transaction: encryptedTransaction });
 });
@@ -197,8 +204,7 @@ app.post('/api/withdraw', authenticateUser, async (req, res) => {
     };
 
     const encryptedTransaction = encrypt(JSON.stringify(transaction));
-    db.data.transactions.push(encryptedTransaction);
-    await db.write();
+    db.get('transactions').push(encryptedTransaction).write();
 
     res.status(200).json({ message: 'Withdrawal successful', transaction: encryptedTransaction });
   } catch (error) {
@@ -208,12 +214,12 @@ app.post('/api/withdraw', authenticateUser, async (req, res) => {
 
 // Get transaction history
 app.post('/api/transactions', authenticateUser, (req, res) => {
-  const encryptedTransactions = db.data.transactions.filter(
+  const encryptedTransactions = db.get('transactions').filter(
     t => {
       const transaction = JSON.parse(decrypt(t));
       return transaction.senderMobile === req.user.mobile || transaction.receiverMobile === req.user.mobile;
     }
-  );
+  ).value();
   const transactions = encryptedTransactions.map(t => JSON.parse(decrypt(t)));
   res.json(transactions);
 });
