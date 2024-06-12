@@ -224,7 +224,4 @@ app.post('/api/transactions', authenticateUser, (req, res) => {
   res.json(transactions);
 });
 
-app.listen(port, () => {
-  console.log(`Fake Pay API listening at http://localhost:${port}`);
-  console.log(`Open http://localhost:${port} in your browser to view the application.`);
-});
+app.listen(port, () => {});
