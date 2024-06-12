@@ -1,4 +1,4 @@
-const apiUrl = 'https://fake-pay-five.vercel.app/';  // Update with your API URL
+const apiUrl = 'https://fake-mtfzuspqq-ahmer-rehmans-projects.vercel.app';  // Update with your API URL
 
 let currentUser = null;
 
