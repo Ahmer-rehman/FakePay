@@ -16,7 +16,7 @@ function register() {
     .then(data => {
         document.getElementById('register-message').innerText = data.message || 'Registration successful!';
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => alert('Error: ' + error));
 }
 
 function login() {
@@ -39,7 +39,7 @@ function login() {
             updateUserDetails();
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => alert('Error: ' + error));
 }
 
 function logout() {
@@ -68,7 +68,7 @@ function deposit() {
             updateUserDetails();
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => alert('Error: ' + error));
 }
 
 function generateWithdrawOTP() {
@@ -81,7 +81,7 @@ function generateWithdrawOTP() {
     .then(data => {
         document.getElementById('withdraw-message').innerText = data.message;
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => alert('Error: ' + error));
 }
 
 function withdraw() {
@@ -101,7 +101,7 @@ function withdraw() {
             updateUserDetails();
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => alert('Error: ' + error));
 }
 
 function generateTransferOTP() {
@@ -114,7 +114,7 @@ function generateTransferOTP() {
     .then(data => {
         document.getElementById('transfer-message').innerText = data.message;
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => alert('Error: ' + error));
 }
 
 function transfer() {
@@ -135,7 +135,7 @@ function transfer() {
             updateUserDetails();
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => alert('Error: ' + error));
 }
 
 function viewTransactions() {
@@ -152,5 +152,5 @@ function viewTransactions() {
             transactionHistory.innerHTML += `<p>${transaction.date}: ${transaction.type} ${transaction.amount} to/from ${transaction.receiverMobile}</p>`;
         });
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => alert('Error: ' + error));
 }
