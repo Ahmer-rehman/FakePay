@@ -1,0 +1,39 @@
+{
+  "name": "fakepay",
+  "version": "1.0.0",
+  "description": "A simple payment app with OTP-based authentication and transaction management.",
+  "main": "Server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node Server.js",
+    "dev": "nodemon Server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "lowdb": "^3.0.0",
+    "nanoid": "^4.0.0",
+    "twilio": "^3.84.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/fakepay.git"
+  },
+  "author": "Your Name",
+  "license": "MIT",
+  "keywords": [
+    "express",
+    "payment",
+    "twilio",
+    "otp",
+    "encryption"
+  ]
+}
